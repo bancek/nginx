@@ -158,6 +158,13 @@ cookbook_file "#{node['nginx']['dir']}/mime.types" do
   notifies :reload, 'service[nginx]'
 end
 
+bash "extract_nginx_source" do
+  cwd ::File.dirname(src_filepath)
+    code <<-EOH
+        tar zxf #{::File.basename(src_filepath)} -C #{::File.dirname(src_filepath)}
+    EOH
+end
+
 node['nginx']['source']['modules'].each do |ngx_module|
   include_recipe "nginx::#{ngx_module}"
 end
@@ -168,7 +175,6 @@ nginx_force_recompile = node.run_state['nginx_force_recompile']
 bash "compile_nginx_source" do
   cwd ::File.dirname(src_filepath)
   code <<-EOH
-    tar zxf #{::File.basename(src_filepath)} -C #{::File.dirname(src_filepath)} &&
     cd nginx-#{node['nginx']['version']} &&
     ./configure #{node.run_state['nginx_configure_flags'].join(" ")} &&
     make && make install
